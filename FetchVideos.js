@@ -1,14 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  Dimensions,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
 
 import {
-  Colors
-} from 'react-native/Libraries/NewAppScreen';
+  Dimensions,
+} from 'react-native';
 
 import { 
   RecyclerListView, 
@@ -17,11 +11,11 @@ import {
   RefreshControl
 } from "recyclerlistview";
 
-import Video from 'react-native-video';
+import VideoPlayer from './VideoPlayer';
 
 const window = Dimensions.get('window');
 
-const FetchVideos: () => React$Node = () => {
+const FetchVideos = () => {
   const [videosList, updateList] = useState([]);
   const [pageNum, nextPage] = useState(0);
   const videoFeedURI = "https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed";
@@ -68,18 +62,11 @@ const FetchVideos: () => React$Node = () => {
   
   const rowRenderer = (type, { node }, index) => {
     return (
-      <View style={styles.fullWidth}>
-      <Video
-        source = {{uri: videosList[index].playbackUrl, type: 'm3u8'}}
-        style = {styles.fullScreen}
-        rate = {1}
-        volume = {1}
-      />
-      </View>
+      <VideoPlayer streamURI={videosList[index].playbackUrl} />
     )
   };
 
-  const refetch = async () => {
+  const fetchNext = async () => {
     let newVideos = await fetchData();
     console.log("refetching", videosList.length, pageNum);
   }
@@ -91,27 +78,9 @@ const FetchVideos: () => React$Node = () => {
       layoutProvider={layoutProvider}
       dataProvider={dataProvider}
       rowRenderer={rowRenderer}
-      onEndReached={refetch}
+      onEndReached={fetchNext}
     /> : <></>
   );
 };
-
-const styles = StyleSheet.create({
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  fullScreen: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  fullWidth: {
-    width: '100%',
-    height: '100%',
-  }
-});
 
 export default FetchVideos;
