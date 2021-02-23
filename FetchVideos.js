@@ -1,12 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -32,7 +24,7 @@ const window = Dimensions.get('window');
 const FetchVideos: () => React$Node = () => {
   const [videosList, updateList] = useState([]);
   const [pageNum, nextPage] = useState(0);
-  const streamUrl = "https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed";
+  const videoFeedURI = "https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed";
   
   const [dataProvider, setDataProvider] = useState(
     new DataProvider((r1, r2) => {
@@ -50,22 +42,24 @@ const FetchVideos: () => React$Node = () => {
     )
   );
 
-  useEffect(() => {
-    fetch(streamUrl, {
+  const fetchData = async () => {
+    try {
+      const res = await fetch(videoFeedURI, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({'page': pageNum})
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data);
-      updateList(videosList.concat(data));
+      });
+      const resData = await res.json();
+    
+      updateList(videosList.concat(resData));
       nextPage(pageNum => pageNum + 1);
-      console.log(videosList, pageNum);
-    })
-    .catch(err => {
+    } catch(err) {
       console.log(err);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -74,7 +68,7 @@ const FetchVideos: () => React$Node = () => {
   
   const rowRenderer = (type, { node }, index) => {
     return (
-      <View style={styles.fullScreen}>
+      <View style={styles.fullWidth}>
       <Video
         source = {{uri: videosList[index].playbackUrl, type: 'm3u8'}}
         style = {styles.fullScreen}
@@ -85,9 +79,9 @@ const FetchVideos: () => React$Node = () => {
     )
   };
 
-  const refetch = () => {
-    console.log("refetching");
-    console.log(videosList.length);
+  const refetch = async () => {
+    let newVideos = await fetchData();
+    console.log("refetching", videosList.length, pageNum);
   }
 
   return (
@@ -111,6 +105,10 @@ const styles = StyleSheet.create({
   },
   fullScreen: {
     position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  fullWidth: {
     width: '100%',
     height: '100%',
   }
